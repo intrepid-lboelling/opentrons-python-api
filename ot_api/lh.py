@@ -150,3 +150,31 @@ def dispense(
   }
 
   return ot_api.runs.enqueue_command("dispense", params, intent="setup", run_id=run_id)
+
+@command
+def blowout(
+  labware_id: str,
+  well_name: str,
+  flow_rate: float,
+  pipette_id,
+  run_id: Optional[str]=None,
+  offset_x: float = 0,
+  offset_y: float = 0,
+  offset_z: float = 0,
+):
+  params = {
+    "labwareId": labware_id,
+    "wellName": well_name,
+    "wellLocation": {
+      "origin": "top",
+      "offset": {
+        "x": offset_x,
+        "y": offset_y,
+        "z": offset_z
+      },
+    },
+    "flowRate": flow_rate,
+    "pipetteId": pipette_id
+  }
+
+  return ot_api.runs.enqueue_command("blowout", params, intent="setup", run_id=run_id)
