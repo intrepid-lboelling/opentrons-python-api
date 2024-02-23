@@ -178,3 +178,19 @@ def blowout(
   }
 
   return ot_api.runs.enqueue_command("blowout", params, intent="setup", run_id=run_id)
+
+
+@command
+def move_relative(
+  axis: str,
+  pipette_id,
+  run_id: Optional[str]=None,
+  distance: float = 0,
+):
+  params = {
+    "axis": axis,
+    "distance": distance,
+    "pipetteId": pipette_id
+  }
+
+  return ot_api.runs.enqueue_command("moveRelative", params, intent="setup", run_id=run_id)
