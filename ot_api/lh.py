@@ -179,6 +179,30 @@ def blowout(
 
   return ot_api.runs.enqueue_command("blowout", params, intent="setup", run_id=run_id)
 
+@command
+def blowout_in_place(
+  flow_rate: float,
+  pipette_id,
+  run_id: Optional[str]=None,
+):
+  params = {
+    "flowRate": flow_rate,
+    "pipetteId": pipette_id
+  }
+
+  return ot_api.runs.enqueue_command("blowOutInPlace", params, intent="setup", run_id=run_id)
+
+
+@command
+def prepare_to_aspirate(
+  pipette_id,
+  run_id: Optional[str]=None,
+):
+  params = {
+    "pipetteId": pipette_id
+  }
+
+  return ot_api.runs.enqueue_command("prepareToAspirate", params, intent="setup", run_id=run_id)
 
 @command
 def move_relative(
@@ -194,3 +218,31 @@ def move_relative(
   }
 
   return ot_api.runs.enqueue_command("moveRelative", params, intent="setup", run_id=run_id)
+
+
+
+@command
+def move_to_well(
+  labware_id: str,
+  well_name: str,
+  pipette_id,
+  run_id: Optional[str]=None,
+  offset_x: float = 0,
+  offset_y: float = 0,
+  offset_z: float = 0,
+):
+  params = {
+    "labwareId": labware_id,
+    "wellName": well_name,
+    "wellLocation": {
+      "origin": "top",
+      "offset": {
+        "x": offset_x,
+        "y": offset_y,
+        "z": offset_z
+      },
+    },
+    "pipetteId": pipette_id
+  }
+
+  return ot_api.runs.enqueue_command("moveToWell", params, intent="setup", run_id=run_id)
