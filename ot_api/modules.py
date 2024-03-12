@@ -6,8 +6,13 @@ import ot_api.requestor
 import ot_api.runs
 
 
-@request_with_run_id
-def add_module(
+
+def list_connected_modules():
+    """List the connected modules"""
+    return ot_api.requestor.get('/modules')['data']
+
+@command
+def load_module(
     model: str, 
     slot: int,
     moduleId: Optional[str] = None,

@@ -248,3 +248,254 @@ def move_to_well(
   }
 
   return ot_api.runs.enqueue_command("moveToWell", params, intent="setup", run_id=run_id)
+
+
+
+@command
+def move_to_coords(
+    x: float,
+    y: float,
+    z: float,
+    pipette_id: str,
+    minimum_z_height: float = 500.0,
+    run_id: Optional[str] = None,
+    force_direct: bool = True,
+):
+    params = {
+        "coordinates": {
+            "x": x,
+            "y": y,
+            "z": z,
+        },
+        "minimumZHeight": minimum_z_height,
+        "forceDirect": force_direct,
+        "pipetteId": pipette_id,
+    }
+    return ot_api.runs.enqueue_command(
+        "moveToCoordinates", params, intent="setup", run_id=run_id
+    )
+
+
+@command
+def aspirate_in_place(
+    volume: float,
+    flow_rate: float,
+    pipette_id: str,
+    run_id: Optional[str] = None,
+):
+    assert flow_rate > 0
+    params = {
+        "volume": volume,
+        "flowRate": flow_rate,
+        "pipetteId": pipette_id,
+        "run_id": run_id,
+    }
+    return ot_api.runs.enqueue_command(
+        "aspirateInPlace", params=params, intent="setup", run_id=run_id
+    )
+
+
+@command
+def dispense_in_place(
+    volume: float,
+    flow_rate: float,
+    pipette_id: str,
+    # push_out:Optional[int]=1, # this is not required...
+    run_id: Optional[str] = None,
+):
+    assert flow_rate > 0
+    params = {
+        "volume": volume,
+        "flowRate": flow_rate,
+        "pipetteId": pipette_id,
+        #'push_out': push_out,
+        "run_id": run_id,
+    }
+    return ot_api.runs.enqueue_command(
+        "dispenseInPlace", params=params, intent="setup", run_id=run_id
+    )
+
+
+
+def transfer_to_loc(
+    source_labware_id: str,
+    source_well_name: str,
+    dest_init_coords: dict[str, float],  # initially over labware
+    dest_disp_z_diff: float,  # z coord diff between initial and dispensing height
+    volume: float,
+    pipette_id: str,
+    run_id: Optional[str] = None,
+    blowout: bool = True,
+    blowout_flow_rate: Optional[float] = 300.0,
+    asp_flow_rate: Optional[float] = 300.0,
+    asp_offset_x: Optional[float] = 0.0,
+    asp_offset_y: Optional[float] = 0.0,
+    asp_offset_z: Optional[float] = 0.0,
+    disp_flow_rate: Optional[float] = 300.0,
+    disp_offset_x: Optional[float] = 0.0,
+    disp_offset_y: Optional[float] = 0.0,
+    disp_offset_z: Optional[float] = 0.0,
+    minimum_z_height: float = 10.0,
+    well_location={
+        "origin": "top",
+        "offset": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 10.0,
+        },
+    },
+    force_direct: bool = False,
+    pipette_mount_map=None,
+) -> None:
+    """Transfer to location on the deck of the OT-2
+    Performs the following steps:
+      i) aspirate from defined well
+      ii) move to specified coordinates
+      iii) dispense
+      iv) blowout
+    """
+    # aspirate from the source well
+    r_asp = aspirate(
+        labware_id=source_labware_id,
+        well_name=source_well_name,
+        volume=volume,
+        pipette_id=pipette_id,
+        flow_rate=asp_flow_rate,
+        run_id=run_id,
+        offset_x=asp_offset_x,
+        offset_y=asp_offset_y,
+        offset_z=asp_offset_z,
+        minimum_z_height=minimum_z_height,
+        well_location=well_location,
+        force_direct=force_direct,
+    )
+
+    # TODO: might need to move to safe z-location
+
+    # move to initial coordinates above the destination well
+    r_move_init = move_to_coords(
+        x=dest_init_coords["x"],
+        y=dest_init_coords["y"],
+        z=dest_init_coords["z"],
+        pipette_id=pipette_id,
+        run_id=run_id,
+    )
+
+    # move to final dispensing heing in z-axis
+    r_move_z = move_to_coords(
+        x=dest_init_coords["x"],
+        y=dest_init_coords["y"],
+        z=dest_init_coords["z"] - dest_disp_z_diff,
+        pipette_id=pipette_id,
+        run_id=run_id,
+    )
+
+    # dispense in place
+    r_disp = dispense_in_place(
+        volume=volume,
+        flow_rate=disp_flow_rate,
+        pipette_id=pipette_id,
+        run_id=run_id,
+    )
+
+    # blowout in place
+    if blowout:
+        r_blowout = blowout_in_place(
+            flow_rate=blowout_flow_rate,
+            pipette_id=pipette_id,
+            run_id=run_id,
+        )
+    else:
+        r_blowout = None
+
+    # raise back up to initial height in z-axis
+    r_move_final = move_to_coords(
+        x=dest_init_coords["x"],
+        y=dest_init_coords["y"],
+        z=dest_init_coords["z"],
+        pipette_id=pipette_id,
+        run_id=run_id,
+    )
+
+    return None
+
+
+
+def transfer_from_loc(
+    source_init_coords: dict[str, float],  # initially over labware
+    source_asp_z_diff: float,  # z coord diff between initial and dispensing height
+    dest_labware_id: str,
+    dest_well_name: str,
+    volume: float,
+    pipette_id: str,
+    run_id: Optional[str] = None,
+    blowout: bool = True,
+    blowout_flow_rate: Optional[float] = 300.0,
+    asp_flow_rate: Optional[float] = 300.0,
+    asp_offset_x: Optional[float] = 0.0,
+    asp_offset_y: Optional[float] = 0.0,
+    asp_offset_z: Optional[float] = 0.0,
+    disp_flow_rate: Optional[float] = 300.0,
+    disp_offset_x: Optional[float] = 0.0,
+    disp_offset_y: Optional[float] = 0.0,
+    disp_offset_z: Optional[float] = 0.0,
+    minimum_z_height: float = 10.0,
+    well_location={
+        "origin": "top",
+        "offset": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 10.0,
+        },
+    },
+    force_direct: bool = False,
+    pipette_mount_map=None,
+):
+    """Aspirates in place from a specified location,
+    then dispenses in a known well
+    """
+    # move to initial coordinates above the source well
+    r_move_init = move_to_coords(
+        x=source_init_coords["x"],
+        y=source_init_coords["y"],
+        z=source_init_coords["z"],
+        pipette_id=pipette_id,
+        run_id=run_id,
+    )
+
+    # move to final dispensing height in z-axis
+    r_move_z = move_to_coords(
+        x=source_init_coords["x"],
+        y=source_init_coords["y"],
+        z=source_init_coords["z"] - source_asp_z_diff,
+        pipette_id=pipette_id,
+        run_id=run_id,
+    )
+
+    # aspirate in place
+    r_asp = aspirate_in_place(
+        volume=volume,
+        flow_rate=asp_flow_rate,
+        pipette_id=pipette_id,
+        run_id=run_id,
+    )
+
+    # TODO: might need to move to a safe z location
+
+    # dispense at target well
+    r_disp = dispense(
+        labware_id=dest_labware_id,
+        well_name=dest_well_name,
+        volume=volume,
+        flow_rate=disp_flow_rate,
+        pipette_id=pipette_id,
+        run_id=run_id,
+        offset_x=disp_offset_x,
+        offset_y=disp_offset_y,
+        offset_z=disp_offset_z,
+        minimum_z_height=minimum_z_height,
+        well_location=well_location,
+        force_direct=force_direct,
+    )
+
+    return None
