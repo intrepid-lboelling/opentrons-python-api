@@ -6,7 +6,7 @@ from ot_api.decorators import command, request_with_run_id
 import ot_api.requestor as requestor
 import ot_api.runs
 
-def load_pipette(pipette_name, mount, run_id: Optional[str] = None):
+def load_pipette(pipette_name, mount, run_id: Optional[str] = None) -> dict:
   assert mount in ["left", "right"]
 
   @command
@@ -21,7 +21,7 @@ def load_pipette(pipette_name, mount, run_id: Optional[str] = None):
   return resp["data"]["result"]
 
 @request_with_run_id
-def add_mounted_pipettes(run_id=None) -> Tuple[str, str]:
+def add_mounted_pipettes(run_id=None) -> Tuple[Optional[dict], Optional[dict]]:
   mounted_pipettes = requestor.get("/pipettes")
 
   left_pipette = mounted_pipettes["left"]
@@ -182,6 +182,61 @@ def blowout(
   return ot_api.runs.enqueue_command("blowout", params, intent="setup", run_id=run_id)
 
 @command
+def move_arm(
+  pipette_id: str,
+  location_x: float,
+  location_y: float,
+  location_z: float,
+  minimum_z_height: Optional[float],
+  speed: Optional[float],
+  force_direct: bool = False,
+  run_id: Optional[str]=None
+):
+  params = {
+    "pipetteId": pipette_id,
+    "coordinates": {
+      "x": location_x,
+      "y": location_y,
+      "z": location_z
+    },
+    "forceDirect": force_direct
+  }
+
+  if minimum_z_height is not None:
+    params["minimumZHeight"] = minimum_z_height
+
+  if speed is not None:
+    params["speed"] = speed
+
+  return ot_api.runs.enqueue_command("moveToCoordinates", params, intent="setup", run_id=run_id)
+
+@command
+def move_to_addressable_area_for_drop_tip(
+  pipette_id: str,
+  offset_x: float = 0,
+  offset_y: float = 0,
+  offset_z: float = 0,
+  run_id: Optional[str]=None,
+):
+  params = {
+    "pipetteId": pipette_id,
+    "addressableAreaName": "fixedTrash",
+    "wellName": "A1",
+    "wellLocation": {
+      "origin": "default",
+      "offset": {
+        "x": offset_x,
+        "y": offset_y,
+        "z": offset_z
+      }
+    },
+    "alternateDropLocation": False
+  }
+
+  return ot_api.runs.enqueue_command("moveToAddressableAreaForDropTip", params,
+                                     intent="setup", run_id=run_id)
+
+@command
 def blowout_in_place(
   flow_rate: float,
   pipette_id,
@@ -194,7 +249,6 @@ def blowout_in_place(
 
   return ot_api.runs.enqueue_command("blowOutInPlace", params, intent="setup", run_id=run_id)
 
-
 @command
 def prepare_to_aspirate(
   pipette_id,
@@ -203,8 +257,14 @@ def prepare_to_aspirate(
   params = {
     "pipetteId": pipette_id
   }
-
   return ot_api.runs.enqueue_command("prepareToAspirate", params, intent="setup", run_id=run_id)
+
+@command
+def drop_tip_in_place(pipette_id: str, run_id: Optional[str]=None):
+  params = {
+    "pipetteId": pipette_id
+  }
+  return ot_api.runs.enqueue_command("dropTipInPlace", params, intent="setup", run_id=run_id)
 
 @command
 def move_relative(

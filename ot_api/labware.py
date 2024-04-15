@@ -33,13 +33,28 @@ def add(load_name, namespace, version, slot: int, run_id: str = None, labware_id
   return ot_api.runs.enqueue_command("loadLabware", data, intent="setup", run_id=run_id)
 
 @command
-def load_module(slot: int, model: str, module_id: str, run_id: str = None):
-  """ Load a module into a slot """
-  assert slot in range(1, 13)
-  ot_api.runs.enqueue_command("loadModule",
-    params={"location": {
-      "slotName": str(slot),
-    },
-    "model": model,
-    "moduleId": module_id,
-    }, intent="setup", run_id=run_id)
+def move_labware(labware_id, deck_slot: str  = None, module: str = None,
+                 destination_labware_id: str = None, off_deck=False, run_id: str = None):
+  """ Move a labware to a new location
+
+  Specify exactly one of `deck_slot`, `module` and `destination_labware_id`, or set `off_deck` to True
+  """
+
+  if not sum([deck_slot is not None, module is not None, destination_labware_id is not None, off_deck]) == 1:
+    raise ValueError("Specify exactly one of `deck_slot`, `module`, or `destination_labware_id` or set `off_deck` to True")
+
+  if deck_slot is not None:
+    new_location = {"slotName": deck_slot}
+  elif module is not None:
+    new_location = {"moduleId": module}
+  elif destination_labware_id is not None:
+    new_location = {"labwareId": destination_labware_id}
+  else:
+    new_location = "offDeck"
+
+  data = {
+    "labwareId": labware_id,
+    "newLocation": new_location,
+    "strategy": "manualMoveWithoutPause"
+  }
+  return ot_api.runs.enqueue_command("moveLabware", data, intent="setup", run_id=run_id)
