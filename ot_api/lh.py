@@ -376,6 +376,42 @@ def dispense_in_place(
     )
 
 
+@command 
+def move_labware(
+   labware_id: str, 
+   new_location: str, # Enum --> see opentrons HTTP spec
+   strategy: str='usingGripper', # Enum --> "usingGripper", "manualMoveWithPause", "manualMoveWithoutPause"
+   pickup_offset_x: float=0.,
+   pickup_offset_y: float=0.,
+   pickup_offset_z: float=0.,
+   drop_offset_x: float=0.,
+   drop_offset_y: float=0.,
+   drop_offset_z: float=0.,
+   run_id: Optional[str] = None,
+):
+   pickup_offset = {
+      'x': pickup_offset_x,
+      'y': pickup_offset_y,
+      'z': pickup_offset_z,
+   }
+
+   drop_offset = {
+      'x': drop_offset_x,
+      'y': drop_offset_y,
+      'z': drop_offset_z,
+   }
+
+   params = {
+      'labwareId': labware_id,
+      'newLocation': {'slotName': new_location},
+      'strategy': strategy,
+      'pickUpOffset': pickup_offset,
+      'dropOffset': drop_offset,
+   }
+   return ot_api.runs.enqueue_command(
+      'moveLabware', params=params, intent='setup', run_id=run_id,
+   )
+
 
 def transfer_to_loc(
     source_labware_id: str,
