@@ -376,6 +376,8 @@ def dispense_in_place(
     )
 
 
+@command
+
 @command 
 def move_labware(
    labware_id: str, 
@@ -383,10 +385,10 @@ def move_labware(
    strategy: str='usingGripper', # Enum --> "usingGripper", "manualMoveWithPause", "manualMoveWithoutPause"
    pickup_offset_x: float=0.,
    pickup_offset_y: float=0.,
-   pickup_offset_z: float=0.,
+   pickup_offset_z: float=5.,
    drop_offset_x: float=0.,
    drop_offset_y: float=0.,
-   drop_offset_z: float=0.,
+   drop_offset_z: float=5.,
    run_id: Optional[str] = None,
 ):
    pickup_offset = {
@@ -403,7 +405,8 @@ def move_labware(
 
    params = {
       'labwareId': labware_id,
-      'newLocation': {'slotName': new_location},
+      #'newLocation': {'slotName': new_location},
+      'newLocation': {'moduleId': new_location},
       'strategy': strategy,
       'pickUpOffset': pickup_offset,
       'dropOffset': drop_offset,

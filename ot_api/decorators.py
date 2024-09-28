@@ -43,6 +43,8 @@ def command(f, timeout=30):
     while datetime.datetime.now() < end:
       result = ot_api.runs.get_command(command_id, run_id=kwargs["run_id"])
 
+      print('RESULT : ', result)
+
       if result["data"]["status"] == "failed":
         error_data = result["data"]["error"]
         error_type = error_data["errorType"]
