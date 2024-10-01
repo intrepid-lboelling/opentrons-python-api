@@ -310,7 +310,6 @@ def move_to_well(
   return ot_api.runs.enqueue_command("moveToWell", params, intent="setup", run_id=run_id)
 
 
-
 @command
 def move_to_coords(
     x: float,
@@ -377,6 +376,44 @@ def dispense_in_place(
 
 
 @command
+def retract_pipette_z_axis(
+  pipette_mount: str, # left or right
+  run_id: Optional[str] = None, 
+) -> None: 
+   params = {'axis': f'{pipette_mount}Z'}
+   return ot_api.runs.enqueue_command(
+     'retractAxis', params=params, intent='setup', run_id=run_id,
+   )
+
+@command 
+def home_extension_jaw(
+  run_id: Optional[str] = None, 
+) -> None: 
+  params = {'axes': 'extensionJaw'},
+  return ot_api.runs.enqueue_command(
+      'home', params=params, intent='setup', run_id=run_id,
+  )
+
+@command
+def home_extension_z_axis(
+   run_id: Optional[str] = None,
+) -> None:
+  params = {'axes': 'extensionZ'}, 
+  return ot_api.runs.enqueue_command(
+        'home', params=params, intent='setup', run_id=run_id,
+    ) 
+
+  
+
+
+@command
+def home_gripper(
+   run_id: Optional[str] = None,  
+): 
+  params = {'axes': 'extensionJaw'},
+  return ot_api.runs.enqueue_command(
+      'home', params=params, intent='setup', run_id=run_id,
+  )
 
 @command 
 def move_labware(
