@@ -127,6 +127,23 @@ def load_module(slot: int, model: str, module_id: str, run_id: str = None):
         "moduleId": module_id,
         }, intent="setup", run_id=run_id)
 
+@command
+def load_adapter(load_name:str, namespace: str, version: int, module_id: str, run_id: str = None, labware_id=None, display_name=None):
+  """ Add a labware to a slot """
+  # if type(slot) == int:
+  #   assert slot in range(1, 13)
+
+  data = {
+    "location": {
+        "moduleId": module_id
+    },
+    "loadName": load_name,
+    "namespace": namespace,
+    "version": version,
+    "labwareId": labware_id,
+    "displayName": display_name,
+  }
+  return ot_api.runs.enqueue_command("loadLabware", data, intent="setup", run_id=run_id)
 
 @command
 def temperature_module_set_temperature(celsius: float, module_id: str, run_id: str = None):
