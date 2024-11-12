@@ -389,7 +389,7 @@ def retract_pipette_z_axis(
 def home_extension_jaw(
   run_id: Optional[str] = None, 
 ) -> None: 
-  params = {'axes': 'extensionJaw'},
+  params = {'axes': 'extensionJaw'}
   return ot_api.runs.enqueue_command(
       'home', params=params, intent='setup', run_id=run_id,
   )
@@ -398,7 +398,7 @@ def home_extension_jaw(
 def home_extension_z_axis(
    run_id: Optional[str] = None,
 ) -> None:
-  params = {'axes': 'extensionZ'}, 
+  params = {'axes': 'extensionZ'}
   return ot_api.runs.enqueue_command(
         'home', params=params, intent='setup', run_id=run_id,
     ) 
@@ -410,7 +410,7 @@ def home_extension_z_axis(
 def home_gripper(
    run_id: Optional[str] = None,  
 ): 
-  params = {'axes': 'extensionJaw'},
+  params = {'axes': ['extensionJaw']}
   return ot_api.runs.enqueue_command(
       'home', params=params, intent='setup', run_id=run_id,
   )
@@ -422,10 +422,10 @@ def move_labware(
    strategy: str='usingGripper', # Enum --> "usingGripper", "manualMoveWithPause", "manualMoveWithoutPause"
    pickup_offset_x: float=0.,
    pickup_offset_y: float=0.,
-   pickup_offset_z: float=5.,
+   pickup_offset_z: float=49.85,
    drop_offset_x: float=0.,
    drop_offset_y: float=0.,
-   drop_offset_z: float=5.,
+   drop_offset_z: float=0.,
    run_id: Optional[str] = None,
 ):
    pickup_offset = {
@@ -440,10 +440,25 @@ def move_labware(
       'z': drop_offset_z,
    }
 
+   if int(new_location) <= 12:
+     new_loc = {'slotName': str(new_location)}
+   else:
+     map_ = {'13': 'A4', '14': 'B4', '15': 'C4', '16': 'D4'}
+     let_num_loc = map_[new_location]
+    
+     new_loc = {'addressableAreaName': let_num_loc},
+
+   if isinstance(new_loc, tuple):
+       new_loc = new_loc[0]
+       assert isinstance(new_loc,dict)
+   print('new loc : ', new_loc)
+   
+
    params = {
       'labwareId': labware_id,
-      #'newLocation': {'slotName': new_location},
-      'newLocation': {'moduleId': new_location},
+      #'newLocation': 'offDeck',
+      'newLocation': new_loc, # {'addressableAreaName': new_location},
+      #'newLocation': {'moduleId': new_location},
       'strategy': strategy,
       'pickUpOffset': pickup_offset,
       'dropOffset': drop_offset,
