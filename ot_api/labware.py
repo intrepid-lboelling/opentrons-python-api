@@ -17,29 +17,11 @@ def undefine(labware_def_id, run_id=None):
   return ot_api.requestor.delete(f"/runs/{run_id}/labware_definitions/{labware_def_id}")
 
 @command
-def add(load_name, namespace, version, slot: int| str, run_id: str = None, labware_id=None, display_name=None):
+def add(load_name, namespace, version, location: dict[str, str], run_id: str = None, labware_id=None, display_name=None):
   """ Add a labware to a slot """
-  # if type(slot) == int:
-  #   assert slot in range(1, 13)
-
-  if int(slot) <= 12:
-    loc = {'slotName': str(slot)}
-  else:
-     map_ = {'13': 'A4', '14': 'B4', '15': 'C4', '16': 'D4'}
-     let_num_loc = map_[str(slot)]
-    
-     loc = {'addressableAreaName': let_num_loc},
-
-  if isinstance(loc, tuple):
-      loc = loc[0]
-      assert isinstance(loc,dict)
-  print('loadLabware loc : ', loc)
-
-  print(slot)
-  print(load_name)
 
   data = {
-    "location": loc,
+    "location": location,
     "loadName": load_name,
     "namespace": namespace,
     "version": version,
