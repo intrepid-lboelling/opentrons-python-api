@@ -29,12 +29,12 @@ def get(path: str) -> dict:
   resp = requests.get(url, headers=headers)
   return _return_resp(resp)
 
-def post(path: str, data=None) -> dict:
+def post(path: str, data=None, timeout:int = 100) -> dict:
   url = get_url(path)
   if data is not None:
     data = json.dumps(data)
     headers["Content-Type"] = "application/json"
-  resp = requests.post(url, headers=headers, data=data)
+  resp = requests.post(url, headers=headers, data=data, timeout=timeout)  
   return _return_resp(resp)
 
 def delete(path):
