@@ -415,6 +415,25 @@ def home_gripper(
       'home', params=params, intent='setup', run_id=run_id,
   )
 
+
+@command 
+def safe_move_gantry(
+    run_id: Optional[str] = None,
+  ) -> None:
+
+    params = {
+      "mount": "left",
+      "destination": {  
+        "x": 200, 
+        "y": 200,
+        "z": 100, 
+    }
+    }
+    return ot_api.runs.enqueue_command(
+      "robot/moveTo", params=params, intent="setup", run_id=run_id
+    )
+
+
 @command 
 def move_labware(
    labware_id: str, 
